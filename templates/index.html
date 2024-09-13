@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Upload with Month Selection</title>
+    <style>
+        .drop-zone {
+            width: 300px;
+            height: 150px;
+            border: 2px dashed #ccc;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 20px auto;
+            text-align: center;
+        }
+        .result {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .month-select {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="month-select">
+        <label for="month">Choose a month:</label>
+        <select id="month" name="month">
+            <option value="None">None</option>
+            <option value="1">January</option>
+            <option value="2">February</option>
+            <option value="3">March</option>
+            <option value="4">April</option>
+            <option value="5">May</option>
+            <option value="6">June</option>
+            <option value="7">July</option>
+            <option value="8">August</option>
+            <option value="9">September</option>
+            <option value="10">October</option>
+            <option value="11">November</option>
+            <option value="12">December</option>
+        </select>
+    </div>
+
+    <div class="drop-zone" id="dropZone">
+        Drop a file here
+    </div>
+
+    <div class="result" id="result">
+        <!-- Result will be shown here -->
+    </div>
+
+    <div class="num_events" id="total_events">
+
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const resultDiv = document.getElementById('result');
+        const monthSelect = document.getElementById('month');
+    
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+        });
+    
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const file = e.dataTransfer.files[0];
+            const selectedMonth = monthSelect.value;  // Get the selected month
+    
+            // Check if a month is selected before proceeding
+            if (selectedMonth === "None") {
+                resultDiv.innerHTML = `<p style="color: red;">Please select a month before uploading a file.</p>`;
+                return;
+            }
+    
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('month', selectedMonth);  // Add the selected month to the form data
+    
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Display the result from the backend
+                if (data.error) {
+                    resultDiv.innerHTML = `<p>Error: ${data.error}</p>`;
+                } else {
+                    // Clear the resultDiv first
+                    resultDiv.innerHTML = '';
+
+                    // Display total number of events
+                    resultDiv.innerHTML += "<strong>Total Number of Events:</strong><br>";
+
+                    // Loop through the num_events object and display each key-value pair
+                    for (let event in data.num_events) {
+                        resultDiv.innerHTML += `${event}: ${data.num_events[event]}<br>`;
+                    }
+
+                    resultDiv.innerHTML += "<br>";  // Add a line break for spacing
+
+                    // Display the sorted result
+                    resultDiv.innerHTML += "<strong>Ambassador Minutes for Selected Month (Sorted):</strong><br>";
+                    data.sorted_result.forEach(item => {
+                        resultDiv.innerHTML += `${item[0]}: ${item[1]} minutes<br>`;
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                resultDiv.innerHTML = `<p>Error occurred while uploading the file.</p>`;
+            });
+
+        });
+    </script>    
+</body>
+</html>
